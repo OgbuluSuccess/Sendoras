@@ -1,0 +1,12 @@
+/* Default App.css cleared to prevent conflicts with Dashboard layouts */
+#root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}

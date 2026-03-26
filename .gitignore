@@ -1,0 +1,20 @@
+# Dependencies
+node_modules
+server/node_modules
+client/node_modules
+sendora-trailer/node_modules
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Build Outputs
+dist
+client/dist
+sendora-trailer/out
+sendora-trailer/dist
+
+# OS Files
+.DS_Store
+Thumbs.db

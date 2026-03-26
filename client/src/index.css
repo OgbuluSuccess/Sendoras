@@ -1,0 +1,77 @@
+:root {
+    --color-bg-dark: #0b1a15;
+    --color-bg-card: #11221c;
+    --color-bg-light: #f3f4f6;
+
+    --color-primary: #0ead69;
+    --color-primary-light: #15d683;
+
+    --color-text-main: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-text-dark: #1e293b;
+
+    --color-white: #ffffff;
+
+    --font-family-main: 'Inter', sans-serif;
+    --font-family-display: 'Outfit', sans-serif;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(14, 173, 105, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--color-bg-dark);
+    color: var(--color-text-main);
+    font-family: var(--font-family-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-family-display);
+}
+
+button {
+    font-family: var(--font-family-main);
+    cursor: pointer;
+}
+
+input,
+textarea {
+    font-family: var(--font-family-main);
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--color-white);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.1);
+}

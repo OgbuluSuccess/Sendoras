@@ -35,8 +35,18 @@ app.use('/api/validate', require('./routes/validationRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
 try { app.use('/api/webhooks', require('./routes/webhookRoutes')); } catch (e) { }  // optional
 
-app.get('/', (req, res) => {
-    res.send('Sendoras API is running');
+// Serve React frontend statically in production
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../../client/dist')));
+
+// Ensure API requests don't fall through to React Router if they don't exist
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// React Router Fallback - Any other request goes to the frontend
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
 });
 
 const PORT = process.env.PORT || 5000;

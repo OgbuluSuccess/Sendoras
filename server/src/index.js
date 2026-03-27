@@ -16,7 +16,14 @@ try { require('./workers/emailWorker'); } catch (e) { console.log('Email Worker 
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "upgrade-insecure-requests": null, // Disable forcing HTTPS for now
+        },
+    },
+}));
 app.use(cors());
 app.use(express.json());
 

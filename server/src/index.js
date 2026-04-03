@@ -42,6 +42,24 @@ app.use('/api/validate', require('./routes/validationRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
 try { app.use('/api/webhooks', require('./routes/webhookRoutes')); } catch (e) { }  // optional
 
+const { exec } = require('child_process');
+
+// GitHub Auto-Deploy Webhook
+// When GitHub sends a push event here, the server will pull the latest code and rebuild automatically.
+app.post('/api/webhooks/github-deploy', (req, res) => {
+    console.log("🚀 GitHub Push detected! Starting automatic deployment...");
+    res.status(200).send('Deploying...');
+
+    // Execute the npm run deploy command from the package.json we placed earlier
+    exec('cd .. && npm run deploy', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`❌ Auto-Deployment Error: ${error.message}`);
+            return;
+        }
+        console.log(`✅ Auto-Deployment Success:\n${stdout}`);
+    });
+});
+
 // Serve React frontend statically in production
 const path = require('path');
 app.use(express.static(path.join(__dirname, '../../client/dist')));

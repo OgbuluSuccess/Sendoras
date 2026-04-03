@@ -7,7 +7,6 @@ import ConfirmModal from '../components/ConfirmModal';
 
 const TABS = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },
-    { id: 'domain', label: 'Sending Domain', icon: <Globe size={16} /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { id: 'danger', label: 'Danger Zone', icon: <Trash2 size={16} /> },
 ];
@@ -49,198 +48,6 @@ const RecordRow = ({ type, name, value, ttl = 'Auto' }) => (
     </tr>
 );
 
-const DomainTab = () => {
-    const [domains, setDomains] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [newDomain, setNewDomain] = useState('');
-    const [adding, setAdding] = useState(false);
-    const [checking, setChecking] = useState(null);
-    const [expanded, setExpanded] = useState(null);
-    const [confirmDelete, setConfirmDelete] = useState(null); // { id, domain }
-
-    useEffect(() => { fetchDomains(); }, []);
-
-    const fetchDomains = async () => {
-        try {
-            const data = await domainService.getDomains();
-            setDomains(data);
-        } catch { toast.error('Failed to load domains'); }
-        finally { setLoading(false); }
-    };
-
-    const handleAddDomain = async (e) => {
-        e.preventDefault();
-        if (!newDomain.trim()) return;
-        setAdding(true);
-        const tid = toast.loading('Registering domain…');
-        try {
-            const domain = await domainService.addDomain(newDomain.trim().toLowerCase());
-            setDomains(prev => [domain, ...prev]);
-            setExpanded(domain._id);
-            setNewDomain('');
-            toast.success('Domain added! Add the DNS records below to your registrar.', { id: tid });
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Failed to add domain', { id: tid });
-        } finally { setAdding(false); }
-    };
-
-    const handleCheck = async (id) => {
-        setChecking(id);
-        const tid = toast.loading('Checking verification…');
-        try {
-            const updated = await domainService.checkDomain(id);
-            setDomains(prev => prev.map(d => d._id === id ? updated : d));
-            if (updated.status === 'verified') {
-                toast.success('🎉 Domain verified! Campaigns will now send from this domain.', { id: tid });
-            } else {
-                toast('DNS records not yet detected. This can take up to 72 hours.', { id: tid, icon: '⏳' });
-            }
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Verification check failed', { id: tid });
-        } finally { setChecking(null); }
-    };
-
-    const handleDelete = (id, domainName) => {
-        setConfirmDelete({ id, domain: domainName });
-    };
-
-    const confirmDeleteDomain = async () => {
-        if (!confirmDelete) return;
-        try {
-            await domainService.deleteDomain(confirmDelete.id);
-            setDomains(prev => prev.filter(d => d._id !== confirmDelete.id));
-            toast.success('Domain removed');
-        } catch { toast.error('Failed to remove domain'); }
-        finally { setConfirmDelete(null); }
-    };
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <ConfirmModal
-                open={!!confirmDelete}
-                title="Remove Sending Domain"
-                message={`Remove ${confirmDelete?.domain} from Sendora? Your campaigns will fall back to the default Sendora sender address.`}
-                confirmLabel="Remove Domain"
-                danger={true}
-                onConfirm={confirmDeleteDomain}
-                onCancel={() => setConfirmDelete(null)}
-            />
-            {/* Add Domain Card */}
-            <div className="d-card">
-                <p className="d-card-title" style={{ marginBottom: '0.5rem' }}>Add Your Sending Domain</p>
-                <p style={{ fontSize: '0.83rem', color: '#64748b', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-                    Connect your domain so campaigns send as <strong>noreply@yourdomain.com</strong> instead of Sendora's default address. You'll need to add DNS records at your domain registrar (GoDaddy, Cloudflare, Namecheap, etc.).
-                </p>
-                <form onSubmit={handleAddDomain} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <input
-                        className="d-input"
-                        style={{ flex: 1, minWidth: 200 }}
-                        placeholder="e.g. acme.com"
-                        value={newDomain}
-                        onChange={e => setNewDomain(e.target.value)}
-                        disabled={adding}
-                    />
-                    <button type="submit" className="d-btn d-btn-primary" disabled={adding || !newDomain.trim()}>
-                        <Plus size={16} /> {adding ? 'Adding…' : 'Add Domain'}
-                    </button>
-                </form>
-            </div>
-
-            {/* Domain List */}
-            {loading ? (
-                <div className="d-empty"><p>Loading domains…</p></div>
-            ) : domains.length === 0 ? (
-                <div className="d-card" style={{ textAlign: 'center', padding: '2.5rem' }}>
-                    <Globe size={32} style={{ color: '#e2e8f0', marginBottom: '0.75rem' }} />
-                    <h3 style={{ fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem' }}>No domains added yet</h3>
-                    <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Add your first sending domain above.</p>
-                </div>
-            ) : (
-                domains.map(d => (
-                    <div key={d._id} className="d-card" style={{ border: d.status === 'verified' ? '1.5px solid #bbf7d0' : '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <Globe size={18} style={{ color: d.status === 'verified' ? '#10b981' : '#94a3b8' }} />
-                                <div>
-                                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>{d.domain}</div>
-                                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Added {new Date(d.createdAt).toLocaleDateString()}</div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <StatusBadge status={d.status} />
-                                {d.status !== 'verified' && (
-                                    <button onClick={() => handleCheck(d._id)} disabled={checking === d._id} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.3rem 0.65rem', cursor: 'pointer', fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <RefreshCw size={12} className={checking === d._id ? 'spin' : ''} />
-                                        {checking === d._id ? 'Checking…' : 'Check'}
-                                    </button>
-                                )}
-                                <button onClick={() => setExpanded(expanded === d._id ? null : d._id)} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.3rem 0.65rem', cursor: 'pointer', fontSize: '0.75rem', color: '#64748b' }}>
-                                    {expanded === d._id ? 'Hide DNS' : 'View DNS'}
-                                </button>
-                                <button onClick={() => handleDelete(d._id, d.domain)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.3rem', display: 'flex', alignItems: 'center' }}>
-                                    <Trash2 size={15} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* DNS Records Panel */}
-                        {expanded === d._id && (
-                            <div style={{ marginTop: '1rem' }}>
-                                {d.status !== 'verified' && (
-                                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#166534' }}>
-                                        <p style={{ fontWeight: 700, margin: '0 0 0.3rem' }}>📋 Next Step: Add these DNS records</p>
-                                        <p style={{ margin: 0, color: '#15803d' }}>
-                                            Go to your domain registrar (GoDaddy, Namecheap, Cloudflare, etc.), find <strong>DNS settings</strong> for <strong>{d.domain}</strong>, and add the records below exactly as shown. Then click <strong>"Check"</strong> above.
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-                                    <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>
-                                        <Mail size={15} color="#64748b" /> Sending Records
-                                    </div>
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                                            <thead>
-                                                <tr style={{ background: '#f1f5f9' }}>
-                                                    {['Type', 'Name / Host', 'Value / Points to', 'TTL'].map(h => (
-                                                        <th key={h} style={{ padding: '0.4rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }}>{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {d.resendRecords && d.resendRecords.length > 0 ? (
-                                                    d.resendRecords.map((rec, i) => (
-                                                        <RecordRow
-                                                            key={`resend-${i}`}
-                                                            type={rec.record}
-                                                            name={rec.name}
-                                                            value={rec.value}
-                                                        />
-                                                    ))
-                                                ) : (
-                                                    <>
-                                                        <RecordRow type="TXT" name={`_amazonses.${d.domain}`} value={d.verificationToken || '(token not available)'} />
-                                                        {(d.dkimTokens || []).map((token, i) => (
-                                                            <RecordRow key={i} type="CNAME" name={`${token}._domainkey.${d.domain}`} value={`${token}.dkim.amazonses.com`} />
-                                                        ))}
-                                                    </>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                        <div style={{ padding: '0.65rem 1rem', fontSize: '0.72rem', color: '#64748b', background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
-                                            💡 DNS changes can take up to <strong>72 hours</strong> to propagate. Click <strong>"Check"</strong> to refresh.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                ))
-            )}
-        </div>
-    );
-};
 
 const Settings = () => {
     const user = authService.getCurrentUser();
@@ -340,7 +147,7 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {tab === 'domain' && <DomainTab />}
+
 
                     {tab === 'notifications' && (
                         <div className="d-card">

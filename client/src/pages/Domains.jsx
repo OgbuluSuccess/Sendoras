@@ -157,6 +157,9 @@ const DomainCard = ({ domain, onDelete, onCheck }) => {
     const hasResend = resendRecords.length > 0;
     const hasRecords = hasSes || hasResend;
 
+    // Build DMARC record
+    const dmarcRecords = [{ type: 'TXT', name: `_dmarc.${domain.domain}`, value: 'v=DMARC1; p=none;', ttl: 'Auto' }];
+
     return (
         <div className="d-card" style={{ marginBottom: '1rem' }}>
             {/* Header */}
@@ -248,6 +251,16 @@ const DomainCard = ({ domain, onDelete, onCheck }) => {
                     status={domain.resendStatus || 'pending'}
                     records={resendRecords}
                     badge={hasSes ? '2 of 2' : null}
+                />
+            )}
+
+            {hasRecords && (
+                <ProviderSection
+                    icon={<Globe size={15} color="#64748b" />}
+                    title="Anti-Spam Policy (DMARC)"
+                    status={domain.dmarcStatus || 'pending'}
+                    records={dmarcRecords}
+                    badge="Required"
                 />
             )}
 

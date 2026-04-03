@@ -40,6 +40,13 @@ const DomainSchema = new mongoose.Schema({
         default: 'not_added'
     },
 
+    // ── DMARC Policy verification ─────────────────────────────────────────
+    dmarcStatus: {
+        type: String,
+        enum: ['pending', 'verified', 'failed'],
+        default: 'pending'
+    },
+
     createdAt: { type: Date, default: Date.now }
 });
 

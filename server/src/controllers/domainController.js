@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 const { Resend } = require('resend');
 const Domain = require('../models/Domain');
+const dns = require('dns').promises;
 
 // ── Provider helpers ──────────────────────────────────────────────────────
 const getSES = () => new AWS.SES({
@@ -179,13 +180,24 @@ exports.checkVerification = async (req, res) => {
             }
         }
 
-        // Overall status: verified if at least one provider verified
-        const isVerified = sesStatus === 'verified' || resendStatus === 'verified';
+        // ── Check DMARC Policy ──────────────────────────────────────────────
+        let dmarcStatus = domain.dmarcStatus || 'pending';
+        try {
+            const records = await dns.resolveTxt(`_dmarc.${domain.domain}`);
+            const hasDmarc = records.some(r => r.join('').includes('v=DMARC1'));
+            dmarcStatus = hasDmarc ? 'verified' : 'pending';
+        } catch (err) {
+            dmarcStatus = 'pending'; // ENOTFOUND etc.
+        }
+
+        // Overall status: verified if at least one provider verified AND DMARC is verified
+        const isProviderVerified = sesStatus === 'verified' || resendStatus === 'verified';
         const isFailed = sesStatus === 'failed' && (resendStatus === 'failed' || resendStatus === 'not_added');
 
         domain.sesStatus = sesStatus;
         domain.resendStatus = resendStatus;
-        domain.status = isVerified ? 'verified' : isFailed ? 'failed' : 'pending';
+        domain.dmarcStatus = dmarcStatus;
+        domain.status = (isProviderVerified && dmarcStatus === 'verified') ? 'verified' : isFailed ? 'failed' : 'pending';
         await domain.save();
 
         res.json(domain);

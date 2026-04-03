@@ -163,10 +163,20 @@ exports.checkVerification = async (req, res) => {
                         console.error('Resend auto-create error:', err.message);
                     }
                 } else {
-                    // Has an ID, trigger a verification check then fetch latest status
+                    // Has an ID, fetch latest status first
                     try {
-                        await resend.domains.verify(domain.resendDomainId);
-                        const { data, error } = await resend.domains.get(domain.resendDomainId);
+                        let { data, error } = await resend.domains.get(domain.resendDomainId);
+                        
+                        // If it's not verified, aggressively trigger a verification sweep and wait 3s
+                        if (!error && data && data.status !== 'verified') {
+                            await resend.domains.verify(domain.resendDomainId);
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            const refresh = await resend.domains.get(domain.resendDomainId);
+                            if (!refresh.error && refresh.data) {
+                                data = refresh.data;
+                            }
+                        }
+
                         if (!error && data) {
                             resendStatus = data.status === 'verified' ? 'verified'
                                 : data.status === 'failed' ? 'failed' : 'pending';

@@ -1,6 +1,9 @@
 const EmailService = require('../services/email/EmailService');
 const emailQueue = require('../services/queue/emailQueue');
 const Domain = require('../models/Domain');
+const User = require('../models/User');
+const MessageLog = require('../models/MessageLog');
+const { getPlanLimits } = require('../middleware/tierMiddleware');
 
 // @desc    Send an email
 // @route   POST /api/send
@@ -12,7 +15,24 @@ exports.sendEmail = async (req, res) => {
         return res.status(400).json({ message: 'Missing required fields: to, subject, html' });
     }
 
+    const toAddresses = Array.isArray(to) ? to : to.split(/[,;]/).map(e => e.trim()).filter(Boolean);
+    const recipientCount = toAddresses.length;
+    if (recipientCount === 0) return res.status(400).json({ message: 'No valid recipients' });
+
     try {
+        // ── Exact Quota Check ────────────────────────────────────────────────
+        const user = await User.findById(req.user._id);
+        const plan = await getPlanLimits(user.tier || 'free');
+        const limit = plan ? plan.monthlyEmails : 1000;
+        const used = user.emailsSentThisMonth || 0;
+
+        if (used + recipientCount > limit) {
+            const remaining = Math.max(0, limit - used);
+            return res.status(429).json({
+                message: `Email quota exceeded. You have ${remaining.toLocaleString()} emails remaining this month (limit: ${limit.toLocaleString()}).`
+            });
+        }
+
         let originalEmail = from || req.user.email;
         let senderName = 'API Sender';
         
@@ -52,20 +72,19 @@ exports.sendEmail = async (req, res) => {
         // Add to queue
         await emailQueue.add('send-email', { to, subject, html: finalHtml, from, replyTo: reply_to });
 
-        // Admin Tracking - create a Campaign document for this send
-        const Campaign = require('../models/Campaign');
-        await Campaign.create({
+        // Global Logging
+        const messageLogs = toAddresses.map(recipient => ({
             user: req.user._id,
-            name: `Queued API Send: ${subject}`,
-            subject: subject,
-            sender: from,
-            content: html,
-            status: 'Scheduled', // It's in the queue
-            source: 'api',
-            recipientCount: Array.isArray(to) ? to.length : 1,
-            sentCount: 0,
-            failedCount: 0,
-            errorLogs: []
+            to: recipient,
+            subject,
+            status: 'queued',
+            source: 'app'
+        }));
+        await MessageLog.insertMany(messageLogs);
+
+        // Deduct from quota ahead of queue processing
+        await User.findByIdAndUpdate(req.user._id, {
+            $inc: { emailsSentThisMonth: recipientCount }
         });
 
         res.status(202).json({ message: 'Email queued for sending', status: 'queued' });

@@ -2,9 +2,10 @@ const { Worker } = require('bullmq');
 const { connection } = require('../config/queue');
 const { sendEmail } = require('../services/emailService');
 const Campaign = require('../models/Campaign');
+const MessageLog = require('../models/MessageLog');
 
 const emailWorker = new Worker('email-queue', async (job) => {
-    const { campaignId, to, subject, html, from, replyTo } = job.data;
+    const { campaignId, to, subject, html, from, replyTo, userId, source, messageLogId } = job.data;
 
     try {
         const result = await sendEmail({ to, subject, html, from, replyTo });
@@ -24,6 +25,22 @@ const emailWorker = new Worker('email-queue', async (job) => {
                 }
             });
         }
+
+        if (messageLogId) {
+            await MessageLog.findByIdAndUpdate(messageLogId, {
+                status: 'delivered',
+                messageId: result.messageId || result.MessageId
+            });
+        } else if (userId) {
+            await MessageLog.create({
+                user: userId,
+                to,
+                subject,
+                status: 'delivered',
+                source: source || 'app',
+                messageId: result.messageId || result.MessageId
+            });
+        }
     } catch (error) {
         console.error(`Job ${job.id} failed:`, error);
         throw error;
@@ -36,17 +53,34 @@ emailWorker.on('completed', (job) => {
 
 emailWorker.on('failed', async (job, err) => {
     console.log(`Job ${job.id} failed with ${err.message}`);
+    const { campaignId, userId, to, subject, source, messageLogId } = job?.data || {};
     try {
-        if (job?.data?.campaignId) {
-            await Campaign.findByIdAndUpdate(job.data.campaignId, {
+        if (campaignId) {
+            await Campaign.findByIdAndUpdate(campaignId, {
                 $inc: { failedCount: 1 },
                 $push: {
                     deliveryLogs: {
-                        email: job.data.to || 'Unknown',
+                        email: to || 'Unknown',
                         status: 'failed',
                         message: err.message || 'Unknown error occurred'
                     }
                 }
+            });
+        }
+
+        if (messageLogId) {
+            await MessageLog.findByIdAndUpdate(messageLogId, {
+                status: 'failed',
+                error: err.message
+            });
+        } else if (userId) {
+            await MessageLog.create({
+                user: userId,
+                to: to || 'Unknown',
+                subject: subject || 'Campaign Email',
+                status: 'failed',
+                source: source || 'app',
+                error: err.message
             });
         }
     } catch (e) {

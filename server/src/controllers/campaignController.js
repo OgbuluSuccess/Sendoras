@@ -214,6 +214,8 @@ exports.sendCampaign = async (req, res) => {
             return {
                 name: 'send-email',
                 data: {
+                    userId: req.user.id,
+                    source: 'app',
                     campaignId: campaign._id,
                     to: email,
                     subject: campaign.subject,

@@ -16,6 +16,7 @@ import EditCampaign from './pages/EditCampaign';
 import Domains from './pages/Domains';
 import Contacts from './pages/Contacts';
 import Analytics from './pages/Analytics';
+import ActivityLogs from './pages/ActivityLogs';
 import EmailValidation from './pages/EmailValidation';
 import ApiKeys from './pages/ApiKeys';
 import Billing from './pages/Billing';
@@ -58,6 +59,7 @@ function App() {
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/domains" element={<Domains />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/logs" element={<ActivityLogs />} />
             <Route path="/validation" element={<EmailValidation />} />
             <Route path="/api-keys" element={<ApiKeys />} />
             <Route path="/billing" element={<Billing />} />

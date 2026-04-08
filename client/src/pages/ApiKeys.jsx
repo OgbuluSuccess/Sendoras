@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 import '../styles/DashboardNew.css';
 
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/api\/v1|\/api/g, '') || window.location.origin;
 
 // ── Code examples for each language ──────────────────────────────────────────
 const getExamples = (apiKey) => ({

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Mail, Users, BarChart2, CheckCircle,
-    Key, CreditCard, Settings, LogOut, Menu, X, Bell, Globe
+    Key, CreditCard, Settings, LogOut, Menu, X, Bell, Globe, Activity
 } from 'lucide-react';
 import authService from '../services/auth';
 import '../styles/DashboardNew.css';
@@ -12,6 +12,7 @@ const NAV_MAIN = [
     { to: '/campaigns', end: false, icon: <Mail size={18} />, label: 'Campaigns' },
     { to: '/contacts', end: false, icon: <Users size={18} />, label: 'Contacts' },
     { to: '/analytics', end: false, icon: <BarChart2 size={18} />, label: 'Analytics' },
+    { to: '/logs', end: false, icon: <Activity size={18} />, label: 'Activity Logs' },
     { to: '/domains', end: false, icon: <Globe size={18} />, label: 'Domains' },
     { to: '/validation', end: false, icon: <CheckCircle size={18} />, label: 'Email Validation' },
 ];
@@ -27,6 +28,7 @@ const PAGE_TITLES = {
     '/campaigns': { title: 'Campaigns', sub: 'Manage your email campaigns' },
     '/contacts': { title: 'Contacts', sub: 'Your recipient lists' },
     '/analytics': { title: 'Analytics', sub: 'Campaign performance insights' },
+    '/logs': { title: 'Activity Logs', sub: 'Monitor global email sending operations' },
     '/validation': { title: 'Email Validation', sub: 'Check email deliverability' },
     '/domains': { title: 'Custom Domains', sub: 'Send from your own domain' },
     '/api-keys': { title: 'API Keys', sub: 'Manage developer access' },

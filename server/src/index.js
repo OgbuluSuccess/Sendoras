@@ -40,6 +40,7 @@ app.use('/api/v1', require('./routes/v1Routes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/validate', require('./routes/validationRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
+app.use('/api/logs', require('./routes/logRoutes'));
 try { app.use('/api/webhooks', require('./routes/webhookRoutes')); } catch (e) { }  // optional
 
 const { exec } = require('child_process');

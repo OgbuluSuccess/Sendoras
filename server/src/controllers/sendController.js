@@ -2,6 +2,8 @@ const { sendEmail } = require('../services/emailService');
 const User = require('../models/User');
 const Domain = require('../models/Domain');
 const { scanContent } = require('../services/complianceService');
+const { getPlanLimits } = require('../middleware/tierMiddleware');
+const MessageLog = require('../models/MessageLog');
 
 /**
  * POST /api/v1/messages
@@ -31,6 +33,21 @@ exports.sendMessage = async (req, res) => {
         // Normalise "to" to an array
         const toAddresses = Array.isArray(to) ? to : to.split(/[,;]/).map(e => e.trim()).filter(Boolean);
         if (toAddresses.length === 0) return res.status(400).json({ success: false, error: 'No valid recipients in "to"' });
+
+        // ── Exact Quota Check ────────────────────────────────────────────────
+        const user = await User.findById(req.user._id);
+        const plan = await getPlanLimits(user.tier || 'free');
+        const limit = plan ? plan.monthlyEmails : 1000;
+        const used = user.emailsSentThisMonth || 0;
+
+        if (used + toAddresses.length > limit) {
+            const remaining = Math.max(0, limit - used);
+            return res.status(429).json({
+                success: false,
+                error: `Email quota exceeded. You have ${remaining.toLocaleString()} emails remaining this month (limit: ${limit.toLocaleString()}).`,
+                code: 'QUOTA_EXCEEDED'
+            });
+        }
 
         // ── Resolve FROM address ─────────────────────────────────────────────
         let originalEmail = from || req.user.email;
@@ -81,6 +98,7 @@ exports.sendMessage = async (req, res) => {
 
         const messageIds = [];
         const errors = [];
+        const messageLogs = [];
 
         await Promise.all(toAddresses.map(async (recipient) => {
             try {
@@ -88,35 +106,39 @@ exports.sendMessage = async (req, res) => {
                 const personalizedHtml = htmlBody.replace('{recipientEmail}', encodeURIComponent(recipient));
                 
                 const result = await sendEmail({ to: recipient, subject, html: personalizedHtml, from, replyTo: reply_to });
-                messageIds.push({ to: recipient, id: result.MessageId || result.messageId });
+                const id = result.MessageId || result.messageId;
+                messageIds.push({ to: recipient, id });
+                
+                messageLogs.push({
+                    user: req.user._id,
+                    to: recipient,
+                    subject,
+                    status: 'delivered',
+                    source: 'api',
+                    messageId: id
+                });
             } catch (err) {
                 errors.push({ to: recipient, error: err.message });
+                messageLogs.push({
+                    user: req.user._id,
+                    to: recipient,
+                    subject,
+                    status: 'failed',
+                    source: 'api',
+                    error: err.message
+                });
             }
         }));
 
-        // ── Update quota counter & Admin Tracking ────────────────────────────
+        // ── Update quota counter & Global Logging ───────────────────────────
         const successCount = messageIds.length;
-        if (successCount > 0 || errors.length > 0) {
-            if (successCount > 0) {
-                await User.findByIdAndUpdate(req.user._id, {
-                    $inc: { emailsSentThisMonth: successCount }
-                });
-            }
-            
-            // Log as an API campaign for admin visibility
-            const Campaign = require('../models/Campaign');
-            await Campaign.create({
-                user: req.user._id,
-                name: `API Send: ${subject}`,
-                subject: subject,
-                sender: from,
-                content: htmlBody,
-                status: successCount > 0 ? 'Sent' : 'Failed',
-                source: 'api',
-                recipientCount: toAddresses.length,
-                sentCount: successCount,
-                failedCount: errors.length,
-                errorLogs: errors.map(e => ({ email: e.to, message: e.error }))
+        if (messageLogs.length > 0) {
+            await MessageLog.insertMany(messageLogs);
+        }
+
+        if (successCount > 0) {
+            await User.findByIdAndUpdate(req.user._id, {
+                $inc: { emailsSentThisMonth: successCount }
             });
         }
 

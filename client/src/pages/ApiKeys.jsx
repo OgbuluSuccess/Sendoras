@@ -285,23 +285,7 @@ const DocsTab = ({ apiKeys }) => {
                 )}
             </div>
 
-            {/* Rate limits */}
-            <div className="d-card">
-                <p className="d-card-title" style={{ marginBottom: '0.75rem' }}>Rate Limits & Quotas</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', fontSize: '0.82rem' }}>
-                    {[
-                        { plan: 'Free', limit: '1,000 / mo' },
-                        { plan: 'Starter', limit: '10,000 / mo' },
-                        { plan: 'Pro', limit: '100,000 / mo' },
-                        { plan: 'Enterprise', limit: 'Unlimited' },
-                    ].map(p => (
-                        <div key={p.plan} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.75rem 1rem' }}>
-                            <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '0.15rem' }}>{p.plan}</div>
-                            <div style={{ color: '#64748b' }}>{p.limit}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+
         </div>
     );
 };
@@ -447,7 +431,7 @@ const ApiKeys = () => {
                                             <td style={{ fontWeight: 600 }}>{k.name}</td>
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <code style={{ fontSize: '0.78rem', background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: 6, color: '#334155', letterSpacing: '0.5px' }}>
+                                                    <code style={{ fontSize: '0.78rem', background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: 6, color: '#334155', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
                                                         {k.key ? `${k.key.slice(0, 12)}••••••••••••` : 'sk-••••••••••••'}
                                                     </code>
                                                     <button

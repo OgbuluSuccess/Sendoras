@@ -30,6 +30,8 @@ const SystemCampaigns = () => {
     const [campaigns, setCampaigns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const limit = 10;
 
     const [selectedCampaign, setSelectedCampaign] = useState(null);
     const [detail, setDetail] = useState(null);
@@ -93,6 +95,9 @@ const SystemCampaigns = () => {
         c.name?.toLowerCase().includes(search.toLowerCase()) ||
         c.user?.email?.toLowerCase().includes(search.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filtered.length / limit) || 1;
+    const paginatedCampaigns = filtered.slice((page - 1) * limit, page * limit);
 
     const sentCount = detail?.sentCount || 0;
     const failedCount = detail?.failedCount || 0;
@@ -276,7 +281,13 @@ const SystemCampaigns = () => {
                 <div className="d-card" style={{ marginBottom: '1.25rem', padding: '0.75rem 1rem' }}>
                     <div style={{ position: 'relative' }}>
                         <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                        <input className="d-input" style={{ paddingLeft: '2.25rem' }} placeholder="Search by campaign name or user email…" value={search} onChange={e => setSearch(e.target.value)} />
+                        <input 
+                            className="d-input" 
+                            style={{ paddingLeft: '2.25rem' }} 
+                            placeholder="Search by campaign name or user email…" 
+                            value={search} 
+                            onChange={e => { setSearch(e.target.value); setPage(1); }} 
+                        />
                     </div>
                 </div>
 
@@ -292,33 +303,60 @@ const SystemCampaigns = () => {
                     </div>
                 ) : isMobile ? (
                     /* ─ Mobile: Card List ─ */
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {filtered.map(c => {
-                            const t = c.recipientCount || c.recipients?.length || 0;
-                            const s = c.sentCount || 0;
-                            const f = c.failedCount || 0;
-                            const rate = t > 0 ? Math.round((s / t) * 100) : null;
-                            return (
-                                <div key={c._id} onClick={() => openDetail(c)} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1rem', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #fb923c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
-                                        {(c.user?.name || 'U')[0].toUpperCase()}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.user?.email}</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
-                                            <span className={`d-badge ${statusColors[c.status?.toLowerCase()] || 'd-badge-neutral'}`} style={{ fontSize: '0.65rem' }}>{c.status}</span>
-                                            <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem', borderRadius: '4px', background: c.source === 'api' ? '#e0e7ff' : '#f1f5f9', color: c.source === 'api' ? '#4f46e5' : '#64748b', fontWeight: 600 }}>{c.source === 'api' ? 'API' : 'UI'}</span>
-                                            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{t} recipients</span>
-                                            {rate !== null && <span style={{ fontSize: '0.72rem', color: rate === 100 ? '#10b981' : rate > 50 ? '#3b82f6' : '#ef4444', fontWeight: 600 }}>{rate}% delivered</span>}
-                                            {f > 0 && <span style={{ fontSize: '0.72rem', color: '#ef4444' }}>{f} failed</span>}
+                    <>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {paginatedCampaigns.map(c => {
+                                const t = c.recipientCount || c.recipients?.length || 0;
+                                const s = c.sentCount || 0;
+                                const f = c.failedCount || 0;
+                                const rate = t > 0 ? Math.round((s / t) * 100) : null;
+                                return (
+                                    <div key={c._id} onClick={() => openDetail(c)} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1rem', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #fb923c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
+                                            {(c.user?.name || 'U')[0].toUpperCase()}
                                         </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                                            <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.user?.email}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+                                                <span className={`d-badge ${statusColors[c.status?.toLowerCase()] || 'd-badge-neutral'}`} style={{ fontSize: '0.65rem' }}>{c.status}</span>
+                                                <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem', borderRadius: '4px', background: c.source === 'api' ? '#e0e7ff' : '#f1f5f9', color: c.source === 'api' ? '#4f46e5' : '#64748b', fontWeight: 600 }}>{c.source === 'api' ? 'API' : 'UI'}</span>
+                                                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{t} recipients</span>
+                                                {rate !== null && <span style={{ fontSize: '0.72rem', color: rate === 100 ? '#10b981' : rate > 50 ? '#3b82f6' : '#ef4444', fontWeight: 600 }}>{rate}% delivered</span>}
+                                                {f > 0 && <span style={{ fontSize: '0.72rem', color: '#ef4444' }}>{f} failed</span>}
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={18} style={{ color: '#94a3b8', flexShrink: 0 }} />
                                     </div>
-                                    <ChevronRight size={18} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                                );
+                            })}
+                        </div>
+                        {totalPages > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
+                                <button
+                                    className="d-btn d-btn-secondary d-btn-sm"
+                                    disabled={page === 1}
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                                >
+                                    Previous
+                                </button>
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0.25rem' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                        Page {page} of {totalPages}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <button
+                                    className="d-btn d-btn-secondary d-btn-sm"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     /* ─ Desktop: Table ─ */
                     <div className="d-table-wrap">
@@ -336,7 +374,7 @@ const SystemCampaigns = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map(c => {
+                                {paginatedCampaigns.map(c => {
                                     const t = c.recipientCount || c.recipients?.length || 0;
                                     const s = c.sentCount || 0;
                                     const f = c.failedCount || 0;
@@ -383,6 +421,33 @@ const SystemCampaigns = () => {
                                 })}
                             </tbody>
                         </table>
+                        
+                        {/* Desktop Pagination Controls */}
+                        {totalPages > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
+                                <button
+                                    className="d-btn d-btn-secondary d-btn-sm"
+                                    disabled={page === 1}
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                                >
+                                    Previous
+                                </button>
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0.25rem' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                        Page {page} of {totalPages}
+                                    </span>
+                                </div>
+                                <button
+                                    className="d-btn d-btn-secondary d-btn-sm"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

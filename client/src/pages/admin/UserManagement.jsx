@@ -13,6 +13,11 @@ const UserManagement = () => {
     const [loading, setLoading] = useState(true);
     const [confirm, setConfirm] = useState({ open: false, type: null, id: null, label: '' });
     const [actionLoading, setActionLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const limit = 10;
+
+    const totalPages = Math.ceil(users.length / limit) || 1;
+    const paginatedUsers = users.slice((page - 1) * limit, page * limit);
 
     useEffect(() => { fetchUsers(); }, []);
 
@@ -90,6 +95,7 @@ const UserManagement = () => {
             {loading ? (
                 <div className="d-empty"><p>Loading users…</p></div>
             ) : (
+                <>
                 <div className="d-table-wrap">
                     <table className="d-table">
                         <thead>
@@ -103,7 +109,7 @@ const UserManagement = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map(u => (
+                            {paginatedUsers.map(u => (
                                 <tr key={u._id}>
                                     <td style={{ fontWeight: 600 }}>{u.name}</td>
                                     <td style={{ color: '#64748b', fontSize: '0.85rem' }}>{u.email}</td>
@@ -149,6 +155,33 @@ const UserManagement = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                {users.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
+                        <button 
+                            className="d-btn d-btn-secondary d-btn-sm" 
+                            disabled={page === 1}
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                        >
+                            Previous
+                        </button>
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0.25rem' }}>
+                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                Page {page} of {totalPages}
+                            </span>
+                        </div>
+                        <button 
+                            className="d-btn d-btn-secondary d-btn-sm" 
+                            disabled={page >= totalPages}
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
+                </>
             )}
         </>
     );

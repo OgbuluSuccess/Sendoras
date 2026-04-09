@@ -51,11 +51,12 @@ exports.sendMessage = async (req, res) => {
 
         // ── Resolve FROM address ─────────────────────────────────────────────
         let originalEmail = from || req.user.email;
-        let senderName = 'API Sender';
+        let senderName = user.name || 'Sendora User';
         
         if (from && from.includes('<')) {
             const parts = from.split('<');
-            senderName = parts[0].trim();
+            const parsedName = parts[0].trim();
+            senderName = parsedName || senderName;
             originalEmail = parts[1].replace('>', '').trim();
         } else if (from) {
             originalEmail = from.trim();

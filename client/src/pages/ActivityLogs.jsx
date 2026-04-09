@@ -21,7 +21,7 @@ const ActivityLogs = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${BASE_URL}/api/logs?page=${page}&limit=50`, {
+            const res = await axios.get(`${BASE_URL}/api/logs?page=${page}&limit=10`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -59,30 +59,29 @@ const ActivityLogs = () => {
 
             <div className="d-card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="d-input-icon" style={{ flex: 1, minWidth: '250px' }}>
-                        <Search size={18} />
-                        <input type="text" placeholder="Search by email or subject (coming soon)..." className="d-input" disabled />
+                    <div className="d-input-icon-wrap" style={{ flex: 1, minWidth: 'min(100%, 200px)' }}>
+                        <Search className="d-input-icon" size={18} />
+                        <input type="text" placeholder="Search by email..." className="d-input" disabled style={{ width: '100%' }} />
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="d-filter-tabs" style={{ maxWidth: '100%', overflowX: 'auto' }}>
                         <button 
                             className={`d-filter-tab ${filter === 'all' ? 'active' : ''}`}
                             onClick={() => setFilter('all')}
-                            style={{ margin: 0 }}
                         >
                             All Sources
                         </button>
                         <button 
                             className={`d-filter-tab ${filter === 'api' ? 'active' : ''}`}
                             onClick={() => setFilter('api')}
-                            style={{ margin: 0, gap: '0.4rem' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                         >
                             <Terminal size={14} /> API
                         </button>
                         <button 
                             className={`d-filter-tab ${filter === 'app' ? 'active' : ''}`}
                             onClick={() => setFilter('app')}
-                            style={{ margin: 0, gap: '0.4rem' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                         >
                             <Activity size={14} /> App
                         </button>
@@ -161,25 +160,29 @@ const ActivityLogs = () => {
                 </div>
             )}
 
-            {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem', alignItems: 'center' }}>
-                    <button 
-                        className="d-btn d-btn-secondary d-btn-sm" 
-                        disabled={page === 1}
-                        onClick={() => setPage(p => p - 1)}
-                    >
-                        Previous
-                    </button>
-                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Page {page} of {totalPages}</span>
-                    <button 
-                        className="d-btn d-btn-secondary d-btn-sm" 
-                        disabled={page === totalPages}
-                        onClick={() => setPage(p => p + 1)}
-                    >
-                        Next
-                    </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
+                <button 
+                    className="d-btn d-btn-secondary d-btn-sm" 
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                >
+                    Previous
+                </button>
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0.25rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        Page {page} of {Math.max(1, totalPages)}
+                    </span>
                 </div>
-            )}
+                <button 
+                    className="d-btn d-btn-secondary d-btn-sm" 
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    style={{ flex: 1, width: 'auto', padding: '0.6rem 0.5rem', justifyContent: 'center' }}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 };

@@ -93,7 +93,7 @@ exports.sendMessage = async (req, res) => {
             <br><br>
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea; font-family: sans-serif; font-size: 12px; color: #888; text-align: center;">
                 You are receiving this email because you are subscribed to updates from ${senderName}.<br>
-                If you no longer wish to receive these emails, you can <a href="${baseUrl}/unsubscribe?email={recipientEmail}" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
+                If you no longer wish to receive these emails, you can <a href="${baseUrl}/unsubscribe?email={recipientEmail}&u=${req.user._id}" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
             </div>
         `;
 

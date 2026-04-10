@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { PrivateRoute, PublicRoute } from './components/RouteGuards';
 
 import LandingPage from './pages/LandingPage';
+import Unsubscribe from './pages/Unsubscribe';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -42,6 +43,7 @@ function App() {
       <Routes>
         {/* Public landing page */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/unsubscribe" element={<Unsubscribe />} />
 
         {/* Public routes — redirect to /dashboard if already logged in */}
         <Route element={<PublicRoute />}>

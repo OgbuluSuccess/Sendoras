@@ -29,7 +29,7 @@ const Hero = () => {
           <div className="lp-hero-actions">
             <a href="https://app.sendhiiv.com/signup" className="lp-btn-hero-primary">
               Start for Free →
-            </Link>
+            </a>
             <a href="#how-it-works" className="lp-btn-hero-secondary">
               <PlayCircle size={18} />
               See how it works

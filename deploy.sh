@@ -8,7 +8,7 @@ set -e  # Exit immediately on any error
 echo "🚀 Starting Sendhiiv Deployment..."
 
 # 1. Ensure we are in the correct directory
-cd /var/www/sendhiiv/Sendhiiv || { echo "❌ Could not find the Sendhiiv directory"; exit 1; }
+cd /var/www/sendhiiv || { echo "❌ Could not find the Sendhiiv directory"; exit 1; }
 
 # 2. Pull the latest code from GitHub
 echo "📥 Pulling latest code from GitHub..."

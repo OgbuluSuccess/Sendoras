@@ -27,7 +27,10 @@ const Hero = () => {
           </p>
 
           <div className="lp-hero-actions">
-            <a href="https://app.sendhiiv.com/signup" className="lp-btn-hero-primary">
+            <a
+              href="https://app.sendhiiv.com/signup"
+              className="lp-btn-hero-primary"
+            >
               Start for Free →
             </a>
             <a href="#how-it-works" className="lp-btn-hero-secondary">

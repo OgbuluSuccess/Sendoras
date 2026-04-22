@@ -86,6 +86,7 @@ const toast = {
   error: (msg, opts) => show(msg, "error", opts),
   warning: (msg, opts) => show(msg, "warning", opts),
   info: (msg, opts) => show(msg, "info", opts),
+  loading: (msg, opts) => _toast.loading(msg, opts),
   dismiss: _toast.dismiss,
 };
 

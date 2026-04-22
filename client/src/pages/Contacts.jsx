@@ -22,6 +22,7 @@ const Contacts = () => {
   // Modal state for creating a new list & importing
   const [showModal, setShowModal] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [nameError, setNameError] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [driveUrl, setDriveUrl] = useState("");
@@ -65,7 +66,11 @@ const Contacts = () => {
 
   const handleCreateAndImport = async (e) => {
     e.preventDefault();
-    if (!newListName.trim()) return toast.error("List name is required");
+    if (!newListName.trim()) {
+      setNameError(true);
+      return toast.error("List name is required");
+    }
+    setNameError(false);
     if (!selectedFile) return toast.error("Please select a CSV/Excel file");
 
     setImporting(true);
@@ -135,7 +140,11 @@ const Contacts = () => {
 
   const handleDriveImport = async (e) => {
     e.preventDefault();
-    if (!newListName.trim()) return toast.error("List name is required");
+    if (!newListName.trim()) {
+      setNameError(true);
+      return toast.error("Enter a list name first");
+    }
+    setNameError(false);
     if (!driveUrl.trim()) return toast.error("Please enter a Google Drive URL");
     if (!extractDriveFileId(driveUrl))
       return toast.error(
@@ -413,13 +422,34 @@ const Contacts = () => {
             </p>
 
             <div className="d-form-group" style={{ marginBottom: "1.25rem" }}>
-              <label className="d-label">List Name</label>
+              <label
+                className="d-label"
+                style={{ color: nameError ? "#ef4444" : undefined }}
+              >
+                List Name{" "}
+                {nameError && (
+                  <span style={{ fontWeight: 400, fontSize: "0.8rem" }}>
+                    — required
+                  </span>
+                )}
+              </label>
               <input
                 className="d-input"
                 placeholder="e.g. Newsletter Subscribers"
                 value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
+                onChange={(e) => {
+                  setNewListName(e.target.value);
+                  if (e.target.value.trim()) setNameError(false);
+                }}
                 autoFocus
+                style={
+                  nameError
+                    ? {
+                        borderColor: "#ef4444",
+                        boxShadow: "0 0 0 3px rgba(239,68,68,0.15)",
+                      }
+                    : undefined
+                }
               />
             </div>
 
@@ -442,7 +472,7 @@ const Contacts = () => {
                 type="submit"
                 className="d-btn d-btn-primary"
                 style={{ width: "100%", marginBottom: "1rem" }}
-                disabled={importing || !newListName || !selectedFile}
+                disabled={importing || !selectedFile}
               >
                 <Upload size={15} />{" "}
                 {importing && selectedFile ? "Importing…" : "Upload & Import"}
@@ -522,12 +552,54 @@ const Contacts = () => {
               <button
                 type="submit"
                 className="d-btn d-btn-secondary"
-                style={{ width: "100%", marginBottom: "1rem" }}
-                disabled={importing || !newListName || !driveUrl}
+                style={{
+                  width: "100%",
+                  marginBottom: "1rem",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+                disabled={importing || !driveUrl}
               >
-                <Link2 size={15} />{" "}
-                {importing && driveUrl ? "Fetching…" : "Import from Drive"}
+                {importing && driveUrl && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background:
+                        "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)",
+                      animation: "driveShimmer 1.2s infinite",
+                    }}
+                  />
+                )}
+                {importing && driveUrl ? (
+                  <>
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      style={{
+                        animation: "spin 0.8s linear infinite",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>{" "}
+                    Fetching from Drive…
+                  </>
+                ) : (
+                  <>
+                    <Link2 size={15} /> Import from Drive
+                  </>
+                )}
               </button>
+              <style>{`
+                @keyframes driveShimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+                @keyframes spin { to { transform: rotate(360deg); } }
+              `}</style>
             </form>
 
             <button
@@ -538,6 +610,7 @@ const Contacts = () => {
                 setShowModal(false);
                 setDriveUrl("");
                 setSelectedFile(null);
+                setNameError(false);
               }}
               disabled={importing}
             >

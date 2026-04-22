@@ -22,6 +22,11 @@ export function extractDriveFileId(url) {
   return null;
 }
 
+/** Returns 'sheet' if the URL is a Google Sheets link, 'file' otherwise. */
+export function detectDriveFileType(url) {
+  return /docs\.google\.com\/spreadsheets/.test(url) ? "sheet" : "file";
+}
+
 /**
  * Fetch a public Google Drive file via our backend proxy (avoids CORS)
  * and parse it as XLSX/CSV.
@@ -29,14 +34,17 @@ export function extractDriveFileId(url) {
  * Returns an array of { email, firstName, lastName }
  */
 export async function importFromDriveUrl(shareUrl) {
-  const fileId = extractDriveFileId(shareUrl.trim());
+  const trimmed = shareUrl.trim();
+  const fileId = extractDriveFileId(trimmed);
   if (!fileId)
     throw new Error(
       'Not a valid Google Drive link. Use a "Share" link from Google Drive.',
     );
 
+  const fileType = detectDriveFileType(trimmed);
+
   // Route through backend proxy — server has no CORS restrictions
-  const proxyUrl = `${API_BASE}/proxy/drive?id=${fileId}`;
+  const proxyUrl = `${API_BASE}/proxy/drive?id=${fileId}&type=${fileType}`;
 
   let response;
   try {

@@ -1,11 +1,11 @@
 {
-  "name": "sendoras-trailer",
+  "name": "sendhiiv-trailer",
   "version": "1.0.0",
-  "description": "Remotion video project for recording the Sendora app",
+  "description": "Remotion video project for recording the Sendhiiv app",
   "scripts": {
     "preview": "remotion preview src/index.ts",
-    "render:desktop": "remotion render src/index.ts DesktopVideo out/sendoras-desktop.mp4",
-    "render:mobile": "remotion render src/index.ts MobileVideo out/sendoras-mobile.mp4",
+    "render:desktop": "remotion render src/index.ts DesktopVideo out/sendhiiv-desktop.mp4",
+    "render:mobile": "remotion render src/index.ts MobileVideo out/sendhiiv-mobile.mp4",
     "render:both": "npm run render:desktop && npm run render:mobile"
   },
   "dependencies": {

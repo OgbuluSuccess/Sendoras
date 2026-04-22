@@ -1,23 +1,21 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require("../middleware/authMiddleware");
+const { checkSenderIdentityLimit } = require("../middleware/tierMiddleware");
 const {
-    addDomain,
-    getDomains,
-    checkVerification,
-    deleteDomain,
-    regenerateRecords
-} = require('../controllers/domainController');
+  addDomain,
+  getDomains,
+  checkVerification,
+  deleteDomain,
+  regenerateRecords,
+} = require("../controllers/domainController");
 
 router.use(protect); // All domain routes require auth
 
-router.route('/')
-    .get(getDomains)
-    .post(addDomain);
+router.route("/").get(getDomains).post(checkSenderIdentityLimit, addDomain);
 
-router.post('/:id/check', checkVerification);
-router.post('/:id/regenerate', regenerateRecords);
-router.delete('/:id', deleteDomain);
+router.post("/:id/check", checkVerification);
+router.post("/:id/regenerate", regenerateRecords);
+router.delete("/:id", deleteDomain);
 
 module.exports = router;
-

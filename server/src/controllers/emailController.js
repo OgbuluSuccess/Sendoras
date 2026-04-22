@@ -1,68 +1,79 @@
-const EmailService = require('../services/email/EmailService');
-const emailQueue = require('../services/queue/emailQueue');
-const Domain = require('../models/Domain');
-const User = require('../models/User');
-const MessageLog = require('../models/MessageLog');
-const { getPlanLimits } = require('../middleware/tierMiddleware');
+const EmailService = require("../services/email/EmailService");
+const { getAppSettings } = require("./settingsController");
+const emailQueue = require("../services/queue/emailQueue");
+const Domain = require("../models/Domain");
+const User = require("../models/User");
+const MessageLog = require("../models/MessageLog");
+const { getPlanLimits } = require("../middleware/tierMiddleware");
 
 // @desc    Send an email
 // @route   POST /api/send
 // @access  Private (B2B only)
 exports.sendEmail = async (req, res) => {
-    let { to, subject, html, from, reply_to } = req.body;
+  let { to, subject, html, from, reply_to } = req.body;
 
-    if (!to || !subject || !html) {
-        return res.status(400).json({ message: 'Missing required fields: to, subject, html' });
+  if (!to || !subject || !html) {
+    return res
+      .status(400)
+      .json({ message: "Missing required fields: to, subject, html" });
+  }
+
+  const toAddresses = Array.isArray(to)
+    ? to
+    : to
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter(Boolean);
+  const recipientCount = toAddresses.length;
+  if (recipientCount === 0)
+    return res.status(400).json({ message: "No valid recipients" });
+
+  try {
+    // ── Exact Quota Check ────────────────────────────────────────────────
+    const user = await User.findById(req.user._id);
+    const plan = await getPlanLimits(user.tier || "free");
+    const limit = plan ? plan.monthlyEmails : 1000;
+    const used = user.emailsSentThisMonth || 0;
+
+    if (used + recipientCount > limit) {
+      const remaining = Math.max(0, limit - used);
+      return res.status(429).json({
+        message: `Email quota exceeded. You have ${remaining.toLocaleString()} emails remaining this month (limit: ${limit.toLocaleString()}).`,
+      });
     }
 
-    const toAddresses = Array.isArray(to) ? to : to.split(/[,;]/).map(e => e.trim()).filter(Boolean);
-    const recipientCount = toAddresses.length;
-    if (recipientCount === 0) return res.status(400).json({ message: 'No valid recipients' });
+    const appSettings = await getAppSettings();
+    let originalEmail = from || req.user.email;
+    let senderName = user.name || appSettings.defaultSenderName;
 
-    try {
-        // ── Exact Quota Check ────────────────────────────────────────────────
-        const user = await User.findById(req.user._id);
-        const plan = await getPlanLimits(user.tier || 'free');
-        const limit = plan ? plan.monthlyEmails : 1000;
-        const used = user.emailsSentThisMonth || 0;
+    if (from && from.includes("<")) {
+      const parts = from.split("<");
+      const parsedName = parts[0].trim();
+      senderName = parsedName || senderName;
+      originalEmail = parts[1].replace(">", "").trim();
+    } else if (from) {
+      originalEmail = from.trim();
+    }
 
-        if (used + recipientCount > limit) {
-            const remaining = Math.max(0, limit - used);
-            return res.status(429).json({
-                message: `Email quota exceeded. You have ${remaining.toLocaleString()} emails remaining this month (limit: ${limit.toLocaleString()}).`
-            });
-        }
+    const domainPart = originalEmail.split("@")[1];
+    const verifiedDomain = await Domain.findOne({
+      user: req.user._id,
+      domain: domainPart,
+      status: "verified",
+    });
 
-        let originalEmail = from || req.user.email;
-        let senderName = user.name || 'Sendora User';
-        
-        if (from && from.includes('<')) {
-            const parts = from.split('<');
-            const parsedName = parts[0].trim();
-            senderName = parsedName || senderName;
-            originalEmail = parts[1].replace('>', '').trim();
-        } else if (from) {
-            originalEmail = from.trim();
-        }
+    if (!verifiedDomain) {
+      from = `${senderName} <${appSettings.defaultSenderEmail}>`;
+      reply_to = reply_to || originalEmail;
+    } else {
+      from = `${senderName} <${originalEmail}>`;
+    }
 
-        const domainPart = originalEmail.split('@')[1];
-        const verifiedDomain = await Domain.findOne({ user: req.user._id, domain: domainPart, status: 'verified' });
+    const baseUrl = process.env.CLIENT_URL || appSettings.appBaseUrl;
 
-        if (!verifiedDomain) {
-            from = `${senderName} <hello@sendoras.online>`;
-            reply_to = reply_to || originalEmail;
-        } else {
-            from = `${senderName} <${originalEmail}>`;
-        }
-
-        let baseUrl = process.env.CLIENT_URL;
-        if (!baseUrl || baseUrl.includes('localhost')) {
-            baseUrl = 'https://app.sendoras.online'; 
-        }
-
-        // ── Append Unsubscribe Footer ────────────────────────────────────────
-        let finalHtml = html;
-        finalHtml += `
+    // ── Append Unsubscribe Footer ────────────────────────────────────────
+    let finalHtml = html;
+    finalHtml += `
             <br><br>
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea; font-family: sans-serif; font-size: 12px; color: #888; text-align: center;">
                 You are receiving this email because you are subscribed to updates from ${senderName}.<br>
@@ -70,35 +81,53 @@ exports.sendEmail = async (req, res) => {
             </div>
         `;
 
-        // Add to queue
-        await emailQueue.add('send-email', { to, subject, html: finalHtml, from, replyTo: reply_to });
+    // Add to queue
+    await emailQueue.add("send-email", {
+      to,
+      subject,
+      html: finalHtml,
+      from,
+      replyTo: reply_to,
+    });
 
-        // Global Logging
-        const messageLogs = toAddresses.map(recipient => ({
-            user: req.user._id,
-            to: recipient,
-            subject,
-            status: 'queued',
-            source: 'app'
-        }));
-        await MessageLog.insertMany(messageLogs);
+    // Global Logging
+    const messageLogs = toAddresses.map((recipient) => ({
+      user: req.user._id,
+      to: recipient,
+      subject,
+      status: "queued",
+      source: "app",
+    }));
+    await MessageLog.insertMany(messageLogs);
 
-        // Deduct from quota ahead of queue processing
-        await User.findByIdAndUpdate(req.user._id, {
-            $inc: { emailsSentThisMonth: recipientCount }
-        });
+    // Deduct from quota ahead of queue processing
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { emailsSentThisMonth: recipientCount },
+    });
 
-        res.status(202).json({ message: 'Email queued for sending', status: 'queued' });
-    } catch (error) {
-        // Fallback to direct send
-        console.warn("Queue error, attempting direct send:", error.message);
-        try {
-            const finalHtml = finalHtml || html; // Ensure finalHtml scope exists here
-            const result = await EmailService.sendEmail({ to, subject, html: finalHtml, from, replyTo: reply_to });
-            res.status(200).json({ message: 'Email sent successfully (fallback)', data: result });
-        } catch (e) {
-            console.error("Direct send failed:", e);
-            res.status(500).json({ message: 'Failed to queue or send email', error: e.message });
-        }
+    res
+      .status(202)
+      .json({ message: "Email queued for sending", status: "queued" });
+  } catch (error) {
+    // Fallback to direct send
+    console.warn("Queue error, attempting direct send:", error.message);
+    try {
+      const finalHtml = finalHtml || html; // Ensure finalHtml scope exists here
+      const result = await EmailService.sendEmail({
+        to,
+        subject,
+        html: finalHtml,
+        from,
+        replyTo: reply_to,
+      });
+      res
+        .status(200)
+        .json({ message: "Email sent successfully (fallback)", data: result });
+    } catch (e) {
+      console.error("Direct send failed:", e);
+      res
+        .status(500)
+        .json({ message: "Failed to queue or send email", error: e.message });
     }
+  }
 };

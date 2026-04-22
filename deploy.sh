@@ -1,34 +1,40 @@
 #!/bin/bash
 
-# Sendora Local Deployment Script
+# Sendhiiv Deployment Script
 # Run this inside the VPS to automatically pull and deploy the latest changes
 
-echo "🚀 Starting Sendora Deployment..."
+set -e  # Exit immediately on any error
+
+echo "🚀 Starting Sendhiiv Deployment..."
 
 # 1. Ensure we are in the correct directory
-cd /var/www/sendora/Sendoras || { echo "❌ Could not find the Sendora directory"; exit 1; }
+cd /var/www/sendhiiv/Sendhiiv || { echo "❌ Could not find the Sendhiiv directory"; exit 1; }
 
 # 2. Pull the latest code from GitHub
 echo "📥 Pulling latest code from GitHub..."
 git fetch --all
 git reset --hard origin/main
-git pull origin main
 
 # 3. Update Client (Frontend)
 echo "📦 Building the React Frontend..."
 cd client
-npm install
-npm run build
+npm install --legacy-peer-deps
+
+# Inject production API URL so the client hits your live backend
+VITE_API_URL=https://app.sendhiiv.com/api npm run build
+
 cd ..
 
 # 4. Update Server (Backend)
 echo "⚙️ Updating backend dependencies..."
 cd server
-npm install
+npm install --legacy-peer-deps
 cd ..
 
 # 5. Restart PM2
-echo "🔄 Restarting Sendora API..."
-pm2 restart sendora-api --update-env
+echo "🔄 Restarting Sendhiiv API..."
+pm2 restart sendhiiv-api --update-env
 
-echo "✅ Deployment Complete! Your live app has been successfully updated."
+echo "✅ Deployment Complete! Live at:"
+echo "   🌐 https://sendhiiv.com       (landing page)"
+echo "   🖥️  https://app.sendhiiv.com  (dashboard)"

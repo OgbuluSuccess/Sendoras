@@ -5,10 +5,10 @@ const Campaign = require('../models/Campaign');
 const MessageLog = require('../models/MessageLog');
 
 const emailWorker = new Worker('email-queue', async (job) => {
-    const { campaignId, to, subject, html, from, replyTo, userId, source, messageLogId } = job.data;
+    const { campaignId, to, subject, html, from, replyTo, userId, source, messageLogId, unsubscribeUrl } = job.data;
 
     try {
-        const result = await sendEmail({ to, subject, html, from, replyTo });
+        const result = await sendEmail({ to, subject, html, from, replyTo, unsubscribeUrl });
 
         // Update campaign stats (Naive approach for now, better to batch update)
         if (campaignId) {

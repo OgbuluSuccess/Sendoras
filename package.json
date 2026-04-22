@@ -1,16 +1,16 @@
 {
-    "name": "sendoras-root",
-    "version": "1.0.0",
-    "description": "Root package for Sendoras application",
-    "scripts": {
-        "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-        "install-all": "npm install && npm install --prefix server && npm install --prefix client",
-        "deploy": "git pull && npm install --prefix server && npm install --prefix client && npm run build --prefix client && pm2 restart all"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "devDependencies": {
-        "concurrently": "^8.2.2"
-    }
+  "name": "sendhiiv-root",
+  "version": "1.0.0",
+  "description": "Root package for Sendhiiv application",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client",
+    "deploy": "git pull && npm install --prefix server && npm install --prefix client && npm run build --prefix client && pm2 restart all"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }

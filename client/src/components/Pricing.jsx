@@ -16,7 +16,7 @@ const plans = [
       "API access",
     ],
     ctaText: "Get Started Free",
-    ctaLink: "/signup",
+    ctaLink: "https://app.sendhiiv.com/signup",
     ctaClass: "",
   },
   {
@@ -33,7 +33,7 @@ const plans = [
       "Team members (up to 5)",
     ],
     ctaText: "Start Pro Trial",
-    ctaLink: "/signup",
+    ctaLink: "https://app.sendhiiv.com/signup",
     ctaClass: "plan-btn-primary",
     popular: true,
   },
@@ -101,12 +101,9 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <Link
-                to={plan.ctaLink}
-                className={`lp-plan-btn ${plan.ctaClass}`}
-              >
+              <a href={plan.ctaLink} className={`lp-plan-btn ${plan.ctaClass}`}>
                 {plan.ctaText}
-              </Link>
+              </a>
             </div>
           ))}
         </div>

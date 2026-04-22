@@ -571,9 +571,7 @@ const ApiKeys = () => {
   const canCreateApiKeys = ["pro", "enterprise"].includes(user?.tier);
 
   const handleUpgrade = () => {
-    toast("Upgrade to Pro or Enterprise to create API keys.", {
-      icon: "🔒",
-    });
+    toast.info("Upgrade to Pro or Enterprise to create API keys.");
     navigate("/billing");
   };
 

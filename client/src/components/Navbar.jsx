@@ -44,8 +44,8 @@ const Navbar = () => {
                   paddingTop: "0.5rem",
                 }}
               >
-                <Link
-                  to="/login"
+                <a
+                  href="https://app.sendhiiv.com/login"
                   onClick={() => setIsOpen(false)}
                   style={{
                     color: "#64748b",
@@ -57,11 +57,11 @@ const Navbar = () => {
                   }}
                 >
                   Login
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
-                  to="/signup"
+                <a
+                  href="https://app.sendhiiv.com/signup"
                   onClick={() => setIsOpen(false)}
                   style={{
                     display: "block",
@@ -75,7 +75,7 @@ const Navbar = () => {
                   }}
                 >
                   Get Started Free
-                </Link>
+                </a>
               </li>
             </>
           )}
@@ -83,12 +83,12 @@ const Navbar = () => {
 
         {/* Desktop CTAs */}
         <div className="lp-nav-cta">
-          <Link to="/login" className="lp-btn-ghost">
+          <a href="https://app.sendhiiv.com/login" className="lp-btn-ghost">
             Login
-          </Link>
-          <Link to="/signup" className="lp-btn-primary">
+          </a>
+          <a href="https://app.sendhiiv.com/signup" className="lp-btn-primary">
             Get Started Free
-          </Link>
+          </a>
         </div>
 
         {/* Mobile hamburger */}

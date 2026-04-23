@@ -437,6 +437,7 @@ const DomainCard = ({ domain, onDelete, onCheck }) => {
           </div>
         </div>
         <div
+          className="domain-card-actions"
           style={{
             display: "flex",
             alignItems: "center",

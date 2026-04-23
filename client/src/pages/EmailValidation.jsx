@@ -161,6 +161,7 @@ const EmailValidation = () => {
           <form
             onSubmit={handleCheck}
             style={{ display: "flex", gap: "0.75rem" }}
+            className="ev-single-form"
           >
             <div className="d-input-icon-wrap" style={{ flex: 1 }}>
               <Search size={16} className="d-input-icon" />
@@ -268,7 +269,10 @@ const EmailValidation = () => {
             rows).
           </p>
 
-          <div style={{ display: "flex", gap: "0.75rem" }}>
+          <div
+            style={{ display: "flex", gap: "0.75rem" }}
+            className="ev-bulk-actions"
+          >
             <label
               className={`d-btn d-btn-primary${bulkLoading ? " disabled" : ""}`}
               style={{

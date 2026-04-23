@@ -38,8 +38,9 @@
 .d-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--d-bg);
   font-family: "Inter", "Segoe UI", sans-serif;
   color: var(--d-text);
@@ -205,7 +206,10 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  min-width: 0; /* Important for flex-child truncation */
+  min-width: 0;
+  width: calc(100% - var(--d-sidebar-w));
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 /* ------------------------------------------------
@@ -356,10 +360,11 @@
 .d-page {
   flex: 1;
   padding: 2rem;
-  max-width: 1400px;
   width: 100%;
-  min-width: 0; /* Essential to prevent content from pushing beyond viewport */
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  overflow-x: clip;
 }
 
 .d-page-header {
@@ -975,6 +980,7 @@
   /* Main area flush left — no sidebar margin */
   .d-main {
     margin-left: 0;
+    width: 100%;
   }
 
   /* Less page padding */
@@ -1106,5 +1112,95 @@
 
   .d-table {
     min-width: 380px;
+  }
+}
+
+/* ── Email Validation — mobile ── */
+@media (max-width: 768px) {
+  .ev-single-form {
+    flex-direction: column;
+  }
+
+  .ev-single-form .d-input-icon-wrap {
+    width: 100%;
+  }
+
+  .ev-single-form .d-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ev-bulk-actions {
+    flex-direction: column;
+  }
+
+  .ev-bulk-actions label,
+  .ev-bulk-actions button {
+    width: 100% !important;
+    justify-content: center;
+  }
+}
+
+/* ── Domains — mobile ── */
+@media (max-width: 768px) {
+  .domain-card-actions {
+    width: 100%;
+    justify-content: flex-start !important;
+  }
+}
+
+/* ── Campaign Builder / Edit Campaign — mobile ── */
+@media (max-width: 768px) {
+  /* Hide desktop action buttons */
+  .cb-actions {
+    display: none !important;
+  }
+
+  /* Header takes full width, no side bleed */
+  .cb-header {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .cb-header-left {
+    width: 100%;
+  }
+
+  /* Sticky bottom bar visible on mobile */
+  .cb-sticky-bar {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    gap: 0.75rem;
+    z-index: 90;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .cb-sticky-bar button {
+    flex: 1;
+  }
+
+  /* Bottom padding so sticky bar doesn't cover content */
+  .cb-page-pad {
+    padding-bottom: 80px;
+  }
+
+  /* Drive row stacks vertically */
+  .cb-drive-row {
+    flex-direction: column !important;
+  }
+
+  .cb-drive-row input {
+    width: 100% !important;
+  }
+
+  .cb-drive-row button {
+    width: 100% !important;
+    justify-content: center;
   }
 }

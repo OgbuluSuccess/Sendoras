@@ -19,6 +19,7 @@ import {
 import campaignService from "../services/campaigns";
 import toast from "../utils/toast";
 import ConfirmModal from "../components/ConfirmModal";
+import Pagination from "../components/Pagination";
 
 import { createPortal } from "react-dom";
 
@@ -849,63 +850,7 @@ const Campaigns = () => {
           </table>
         )}
 
-        {/* Pagination Controls */}
-        {totalPages > 0 && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "0.5rem",
-              marginTop: "1.5rem",
-              alignItems: "center",
-            }}
-          >
-            <button
-              className="d-btn d-btn-secondary d-btn-sm"
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              style={{
-                flex: 1,
-                width: "auto",
-                padding: "0.6rem 0.5rem",
-                justifyContent: "center",
-              }}
-            >
-              Previous
-            </button>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                padding: "0 0.25rem",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.85rem",
-                  color: "#64748b",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Page {page} of {totalPages}
-              </span>
-            </div>
-            <button
-              className="d-btn d-btn-secondary d-btn-sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              style={{
-                flex: 1,
-                width: "auto",
-                padding: "0.6rem 0.5rem",
-                justifyContent: "center",
-              }}
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </>
   );

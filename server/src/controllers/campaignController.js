@@ -1,5 +1,6 @@
 const Campaign = require("../models/Campaign");
 const { getAppSettings } = require("./settingsController");
+const { sendEmail } = require("../services/emailService");
 
 // @desc    Get dashboard stats
 // @route   GET /api/campaigns/stats
@@ -224,56 +225,106 @@ exports.sendCampaign = async (req, res) => {
 
     const baseUrl = process.env.CLIENT_URL || appSettings.appBaseUrl;
 
-    // 4. Queue emails
-    const jobs = recipients.map((recipient) => {
-      const email = typeof recipient === "string" ? recipient : recipient.email;
+    // Helper: build personalised HTML for one recipient
+    const buildHtml = (email) =>
+      campaign.content +
+      `<br><br>
+      <div style="margin-top:40px;padding-top:20px;border-top:1px solid #eaeaea;font-family:sans-serif;font-size:12px;color:#888;text-align:center;">
+        You are receiving this email because you are subscribed to updates from ${senderName}.<br>
+        If you no longer wish to receive these emails, you can
+        <a href="${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&u=${req.user.id}" style="color:#666;text-decoration:underline;">unsubscribe here</a>.
+      </div>`;
 
-      // Append compliance footer
-      const personalizedHtml =
-        campaign.content +
-        `
-                <br><br>
-                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea; font-family: sans-serif; font-size: 12px; color: #888; text-align: center;">
-                    You are receiving this email because you are subscribed to updates from ${senderName}.<br>
-                    If you no longer wish to receive these emails, you can <a href="${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&u=${req.user.id}" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
-                </div>
-            `;
-
-      return {
-        name: "send-email",
-        data: {
-          userId: req.user.id,
-          source: "app",
-          campaignId: campaign._id,
-          to: email,
-          subject: campaign.subject,
-          html: personalizedHtml,
-          from: fromAddress,
-          replyTo: originalEmail,
-          unsubscribeUrl: `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&u=${req.user.id}`,
-          personalization: {
-            firstName: recipient.firstName || "",
-            lastName: recipient.lastName || "",
+    // 4. Try queue first; fall back to direct send if Redis is unavailable
+    let usedQueue = false;
+    try {
+      const jobs = recipients.map((recipient) => {
+        const email =
+          typeof recipient === "string" ? recipient : recipient.email;
+        return {
+          name: "send-email",
+          data: {
+            userId: req.user.id,
+            source: "app",
+            campaignId: campaign._id,
+            to: email,
+            subject: campaign.subject,
+            html: buildHtml(email),
+            from: fromAddress,
+            replyTo: originalEmail,
+            unsubscribeUrl: `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&u=${req.user.id}`,
+            personalization: {
+              firstName: recipient.firstName || "",
+              lastName: recipient.lastName || "",
+            },
           },
-        },
-      };
-    });
+        };
+      });
+      await emailQueue.addBulk(jobs);
+      usedQueue = true;
+    } catch (queueErr) {
+      console.warn(
+        "Queue unavailable, falling back to direct send:",
+        queueErr.message,
+      );
+    }
 
-    await emailQueue.addBulk(jobs);
+    if (!usedQueue) {
+      // Direct send — process all recipients now
+      let sentCount = 0;
+      let failedCount = 0;
+      const deliveryLogs = [];
 
-    // 4. Update campaign status
+      await Promise.all(
+        recipients.map(async (recipient) => {
+          const email =
+            typeof recipient === "string" ? recipient : recipient.email;
+          try {
+            const result = await sendEmail({
+              to: email,
+              subject: campaign.subject,
+              html: buildHtml(email),
+              from: fromAddress,
+              replyTo: originalEmail,
+              unsubscribeUrl: `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&u=${req.user.id}`,
+            });
+            sentCount++;
+            deliveryLogs.push({
+              email,
+              status: "sent",
+              messageId: result.MessageId || result.messageId,
+              message: "Delivered successfully",
+            });
+          } catch (err) {
+            failedCount++;
+            deliveryLogs.push({
+              email,
+              status: "failed",
+              message: err.message,
+            });
+          }
+        }),
+      );
+
+      campaign.sentCount = sentCount;
+      campaign.failedCount = failedCount;
+      campaign.deliveryLogs = deliveryLogs;
+    } else {
+      campaign.sentCount = 0; // incremented by worker
+    }
+
+    // 5. Update campaign status
     campaign.status = "Sent";
     campaign.recipientCount = recipients.length;
-    campaign.sentCount = 0; // incremented by worker
     await campaign.save();
 
-    // 5. Increment user's monthly email counter
+    // 6. Increment user's monthly email counter
     await User.findByIdAndUpdate(req.user.id, {
       $inc: { emailsSentThisMonth: recipients.length },
     });
 
     res.json({
-      msg: "Campaign queued for sending",
+      msg: usedQueue ? "Campaign queued for sending" : "Campaign sent",
       campaign,
       quotaUsed: used + recipients.length,
       quotaLimit: limit,

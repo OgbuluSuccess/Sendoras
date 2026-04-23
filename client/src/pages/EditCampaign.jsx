@@ -222,12 +222,20 @@ const EditCampaign = () => {
 
   return (
     <>
+      <style>{`
+        .cb-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; overflow:hidden; width:100%; }
+        .cb-header-title-row { display:flex; align-items:center; gap:0.75rem; min-width:0; }
+        .cb-actions { display:flex; gap:0.75rem; align-items:center; flex-shrink:0; }
+        .cb-sticky-bar { display:none; }
+      `}</style>
+
       {/* Page header */}
-      <div className="d-page-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <div className="cb-header">
+        <div className="cb-header-title-row">
           <button
             className="d-btn d-btn-ghost d-btn-sm"
             onClick={() => navigate("/campaigns")}
+            style={{ flexShrink: 0 }}
           >
             <ArrowLeft size={16} /> Back
           </button>
@@ -235,11 +243,11 @@ const EditCampaign = () => {
             <h1 style={{ margin: 0 }}>Edit Campaign</h1>
             <p style={{ margin: 0, fontSize: "0.875rem", color: "#64748b" }}>
               Editing: <strong>{campaign?.name}</strong>{" "}
-              <span style={{ color: "#94a3b8" }}>Â· {campaign?.status}</span>
+              <span style={{ color: "#94a3b8" }}>· {campaign?.status}</span>
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        <div className="cb-actions">
           <button
             className="d-btn d-btn-secondary"
             onClick={handleSave}
@@ -259,8 +267,28 @@ const EditCampaign = () => {
         </div>
       </div>
 
+      {/* Sticky bottom bar on mobile */}
+      <div className="cb-sticky-bar">
+        <button
+          className="d-btn d-btn-secondary"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          <Save size={16} /> Save
+        </button>
+        {isSentOrFailed && (
+          <button
+            className="d-btn d-btn-primary"
+            onClick={handleSaveAndSend}
+            disabled={saving}
+          >
+            <Send size={16} /> Save & Resend
+          </button>
+        )}
+      </div>
+
       {/* Two-column layout */}
-      <div className="d-grid-2-3" style={{ alignItems: "start" }}>
+      <div className="d-grid-2-3 cb-page-pad" style={{ alignItems: "start" }}>
         {/* Left â€” form fields */}
         <div className="d-card">
           <p className="d-card-title" style={{ marginBottom: "1.25rem" }}>
